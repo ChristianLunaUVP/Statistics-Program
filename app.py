@@ -5,7 +5,7 @@ import numpy as np
 # Configurar la página con diseño minimalista
 st.set_page_config(page_title="Calculadora Estadística", layout="wide")
 
-# 💡 **CSS para estilos personalizados con Material Design y tonos rojos**
+# 💡 **CSS para estilos personalizados**
 st.markdown("""
     <style>
         .stApp {
@@ -79,16 +79,15 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Título con animación
-st.title("📊 Calculadora Estadística con Tabla de Frecuencias")
+# Título
+st.title("📊 Calculadora Estadística con Decimales")
 
 # Entrada de datos (ahora separados por espacios)
-numeros = st.text_area("Ingrese los números separados por espacios:", 
-                       "1 3 3 4 10 11 15 16 17 17 19 21 22 23 25 26 27 29 30 33 34 36 36 36 42 42 45 47 48 50 54 54 58 61 63 65 70 73")
+numeros = st.text_area("Ingrese los números separados por espacios:")
 
 if st.button("Calcular Estadísticas"):
     try:
-        # Convertir datos a lista de números, eliminando espacios extra
+        # Convertir datos a lista de números flotantes y ordenarlos
         lista_numeros = sorted(map(float, numeros.strip().split()))
         n = len(lista_numeros)
 
@@ -97,28 +96,27 @@ if st.button("Calcular Estadísticas"):
         else:
             df = pd.DataFrame(lista_numeros, columns=["Valores"])
 
-            # 📌 **Cálculo de K, C y A sin redondear K**
-            A = max(lista_numeros) - min(lista_numeros)  # Rango
-            K = 1 + 3.322 * np.log10(n)  # Número de intervalos (sin redondeo)
-            C = A / K  # Tamaño del intervalo
+            # 📌 **Cálculo de Parámetros**
+            A = round(max(lista_numeros) - min(lista_numeros), 2)  # Rango
+            K = round(1 + 3.322 * np.log10(n), 2)  # Número de intervalos con 2 decimales
+            C = round(A / K, 2)  # Tamaño del intervalo
 
-            # 📢 **Mostrar cálculos con 2 decimales**
+            # 📢 **Mostrar cálculos**
             st.subheader("📌 Cálculos de Parámetros")
-            st.write(f"🔹 **A (Rango de los datos):** {round(A, 2)}")
-            st.write(f"🔹 **K (Número de Intervalos):** {round(K, 2)} (Regla de Sturges, sin redondeo)")
-            st.write(f"🔹 **C (Tamaño del Intervalo):** {round(C, 2)}")
+            st.write(f"🔹 **A (Rango de los datos):** {A}")
+            st.write(f"🔹 **K (Número de Intervalos):** {K}")
+            st.write(f"🔹 **C (Tamaño del Intervalo):** {C}")
 
-            # 📌 **Mostrar números ordenados con diseño mejorado**
+            # 📌 **Mostrar números ordenados**
             st.subheader("📊 Números Ordenados")
             st.write(f"📌 **Cantidad total de datos ingresados:** {n}")
-            numbers_html = " ".join([f'<span class="number-box">{int(num)}</span>' for num in lista_numeros])
+            numbers_html = " ".join([f'<span class="number-box">{num}</span>' for num in lista_numeros])
             st.markdown(f'<div style="text-align: center;">{numbers_html}</div>', unsafe_allow_html=True)
 
-            # 📌 **Creación de Intervalos con [a - b)**
-            K_int = int(np.ceil(K))  
-            bins = np.arange(min(lista_numeros), max(lista_numeros) + C, C)  
-            bins[-1] += 0.1  
-            df["Intervalo"] = pd.cut(df["Valores"], bins=bins, right=False)  
+            # 📌 **Creación de Intervalos con Decimales**
+            bins = np.linspace(min(lista_numeros), max(lista_numeros) + C, int(np.ceil(K)) + 1)  # Se usa linspace para intervalos con decimales
+            bins[-1] += 0.01  # Asegurar que el número máximo sea incluido en el último intervalo
+            df["Intervalo"] = pd.cut(df["Valores"], bins=bins, right=False)  # Se usa right=False para [a - b)
 
             # 📌 **Tabla de Frecuencias**
             tabla_frec = df["Intervalo"].value_counts().sort_index().reset_index()
